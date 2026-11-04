@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 import { classify, parseConfig } from "./config.ts";
 import { conflictedPaths, readConfig, repoRoot } from "./git.ts";
+import { merge, mergeContinue } from "./merge.ts";
 
-const USAGE = "usage: regen status";
+const USAGE = `usage:
+  regen status
+  regen merge <ref>
+  regen merge --continue`;
 
 function status(root: string) {
   const rules = parseConfig(readConfig(root));
@@ -18,17 +22,17 @@ function status(root: string) {
   return 0;
 }
 
-function main(args: string[]) {
-  if (args[0] !== "status" || args.length !== 1) {
-    console.error(USAGE);
-    return 2;
-  }
-  try {
-    return status(repoRoot(process.cwd()));
-  } catch (error) {
-    console.error(`regen: ${error instanceof Error ? error.message : error}`);
-    return 2;
-  }
+function run(root: string, [command, arg, ...rest]: string[]) {
+  if (command === "status" && arg === undefined) return status(root);
+  if (command === "merge" && arg === "--continue" && rest.length === 0) return mergeContinue(root);
+  if (command === "merge" && arg && !arg.startsWith("-") && rest.length === 0) return merge(root, arg);
+  console.error(USAGE);
+  return 2;
 }
 
-process.exitCode = main(process.argv.slice(2));
+try {
+  process.exitCode = run(repoRoot(process.cwd()), process.argv.slice(2));
+} catch (error) {
+  console.error(`regen: ${error instanceof Error ? error.message : error}`);
+  process.exitCode = 2;
+}

@@ -2,13 +2,13 @@
 
 Stop hand-resolving merge conflicts in files nobody wrote by hand.
 
-> **Status:** early development. Nothing is published yet, so the commands below show the planned interface.
+> **Status:** early development. Nothing is published to npm yet. `regen status` and `regen merge` work from a local build; the rest of the commands below are still planned.
 
 Lockfiles, translation output, and generated clients conflict all the time, especially across parallel or stacked PRs. The fix is almost always the same: pick either side, rerun the generator, commit the result.
 
 `regen` does that for you, and stops the moment a real source file conflicts.
 
-## How it will work
+## How it works
 
 Tell `regen` which files are generated and what produces them:
 
@@ -33,6 +33,17 @@ regen rebase main
 | Only generated files | Reruns their commands, stages the output, and continues |
 | Any source file | Stops and leaves that conflict for you to resolve |
 | A command fails | Stops and shows you the error |
+| A command changes files outside the rules | Stops and lists them |
+
+When `regen` stops, the merge stays in progress. Fix the problem, then run `regen merge --continue`. That reruns every rule, because your fix may have made any generated file stale.
+
+Generated files must be fully rebuildable from source. `regen` starts from one side's copy, so a command that doesn't rewrite the file will silently keep that side.
+
+`regen` only runs commands when something conflicts. If a merge has no conflicts, Git's result stands, even if the generated file is out of date, so keep your CI check for that.
+
+`regen` refuses to start with uncommitted changes to tracked files, because generators would build them into the commit. Untracked files aren't checked, so a generator that globs a folder will pick up an untracked file in it.
+
+Exit codes: `0` done, `1` stopped and needs you, `2` usage or Git error.
 
 ## Why not a Git merge driver?
 
@@ -44,12 +55,12 @@ An agent can do this, but it may do it differently each time. `regen` follows th
 
 ## Safety
 
-`regen` runs commands from a config file, so treat `regen.yml` like any other script in your repo. It will only run what's configured there, and only in repos where you've set it up.
+`regen` runs commands from a config file, so treat `regen.yml` like any other script in your repo. It reads the committed version from `HEAD`, so a branch you're merging can't change which commands run. Those commands can still execute code from that branch, such as an updated `package.json` script, so only use `regen` on branches you trust.
 
 ## Roadmap
 
-- [ ] Config, file matching, and conflict classification
-- [ ] `regen merge`
+- [x] Config, file matching, and conflict classification
+- [x] `regen merge`
 - [ ] `regen rebase`, including conflicts that repeat through a stack
 - [ ] GitHub Action
 - [ ] Demo repo and tests
