@@ -48,6 +48,8 @@ Generated files must be fully rebuildable from source. `regen` starts from one s
 
 Exit codes: `0` done, `1` stopped and needs you, `2` usage or Git error.
 
+See it run with `npm install`, `npm run build`, and `npm run demo`, or read the [captured output](docs/demo.md).
+
 ## Why not a Git merge driver?
 
 A merge driver runs one file at a time, before the merge has finished. A generator running at that point can see a half-merged repo. `regen` wraps the whole operation instead, so generators run once the source files are settled.
@@ -66,7 +68,18 @@ An agent can do this, but it may do it differently each time. `regen` follows th
 - [x] `regen merge`
 - [x] `regen rebase`, including conflicts that repeat through a stack
 - [x] [GitHub Action](docs/github-action.md)
-- [ ] Demo repo and tests
+- [x] [Demo](docs/demo.md) and tests
+
+## Development
+
+The CLI runs on Node 20 or newer. The tests run TypeScript directly, so they need Node 22.18 or newer.
+
+```bash
+npm ci
+npm run typecheck
+npm run build
+npm test
+```
 
 ## License
 
