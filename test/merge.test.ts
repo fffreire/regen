@@ -247,6 +247,18 @@ test("reports git errors", () => {
   assert.equal(repo.regen("merge", "missing").status, 2);
 });
 
+test("won't take over conflicts that are already in progress", () => {
+  const repo = conflictingRepo();
+  repo.git("branch", "other", "main");
+  repo.git("merge", "feature");
+  const conflicted = read(repo, "gen.txt");
+  const result = repo.regen("merge", "other");
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /already in progress/);
+  assert.equal(read(repo, "gen.txt"), conflicted);
+  assert.equal(merging(repo), true);
+});
+
 test("rejects flag-like refs", () => {
   const repo = createRepo();
   repo.commit("base", { "regen.yml": config("true") });

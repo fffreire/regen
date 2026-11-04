@@ -1,11 +1,11 @@
 import { spawnSync } from "node:child_process";
 
-export function git(args: string[], cwd: string) {
+export function git(args: string[], cwd: string, env?: NodeJS.ProcessEnv) {
   const result = spawnSync("git", args, {
     cwd,
     encoding: "utf8",
     maxBuffer: Infinity,
-    env: { ...process.env, GIT_LITERAL_PATHSPECS: "1" },
+    env: { ...process.env, GIT_LITERAL_PATHSPECS: "1", ...env },
   });
   if (result.error) throw result.error;
   return { ok: result.status === 0, stdout: result.stdout, stderr: result.stderr };
@@ -33,8 +33,8 @@ export const untrackedPaths = (root: string) =>
 
 // Read from HEAD, not the working tree, so a branch being merged in can't
 // choose the commands that run on your machine.
-export function readConfig(root: string) {
-  const result = git(["show", "HEAD:regen.yml"], root);
-  if (!result.ok) throw new Error("no regen.yml in HEAD. Add it and commit it first");
+export function readConfig(root: string, rev = "HEAD") {
+  const result = git(["show", `${rev}:regen.yml`], root);
+  if (!result.ok) throw new Error(`no regen.yml in ${rev}. Add it and commit it first`);
   return result.stdout;
 }

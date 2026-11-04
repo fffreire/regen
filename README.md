@@ -2,7 +2,7 @@
 
 Stop hand-resolving merge conflicts in files nobody wrote by hand.
 
-> **Status:** early development. Nothing is published to npm yet. `regen status` and `regen merge` work from a local build; the rest of the commands below are still planned.
+> **Status:** early development. Nothing is published to npm yet. Everything below works from a local build.
 
 Lockfiles, translation output, and generated clients conflict all the time, especially across parallel or stacked PRs. The fix is almost always the same: pick either side, rerun the generator, commit the result.
 
@@ -26,7 +26,10 @@ Then merge or rebase through it:
 ```bash
 regen merge main
 regen rebase main
+regen rebase main --update-refs
 ```
+
+`--update-refs` moves every branch in a stack along with the one you're on, except branches checked out in another worktree, and rebase reruns the generators at each conflicting commit, so no commit in the stack keeps a broken file.
 
 | What conflicts | What `regen` does |
 |---|---|
@@ -35,7 +38,7 @@ regen rebase main
 | A command fails | Stops and shows you the error |
 | A command changes files outside the rules | Stops and lists them |
 
-When `regen` stops, the merge stays in progress. Fix the problem, then run `regen merge --continue`. That reruns every rule, because your fix may have made any generated file stale.
+When `regen` stops, the merge or rebase stays in progress. Fix the problem, then run `regen merge --continue` or `regen rebase --continue`. That reruns every rule, because your fix may have made any generated file stale.
 
 Generated files must be fully rebuildable from source. `regen` starts from one side's copy, so a command that doesn't rewrite the file will silently keep that side.
 
@@ -55,13 +58,13 @@ An agent can do this, but it may do it differently each time. `regen` follows th
 
 ## Safety
 
-`regen` runs commands from a config file, so treat `regen.yml` like any other script in your repo. It reads the committed version from `HEAD`, so a branch you're merging can't change which commands run. Those commands can still execute code from that branch, such as an updated `package.json` script, so only use `regen` on branches you trust.
+`regen` runs commands from a config file, so treat `regen.yml` like any other script in your repo. It reads the committed version from the branch you started on, so a branch you're merging or rebasing onto can't change which commands run. Those commands can still execute code from that branch, such as an updated `package.json` script, so only use `regen` on branches you trust.
 
 ## Roadmap
 
 - [x] Config, file matching, and conflict classification
 - [x] `regen merge`
-- [ ] `regen rebase`, including conflicts that repeat through a stack
+- [x] `regen rebase`, including conflicts that repeat through a stack
 - [ ] GitHub Action
 - [ ] Demo repo and tests
 
