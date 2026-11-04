@@ -1,0 +1,25 @@
+name: regen
+description: Merge a base branch into a checked-out branch, rerun generators for conflicted generated files, and push
+
+inputs:
+  branch:
+    description: Branch that is checked out, and the one to push to
+    required: true
+  base:
+    description: Branch to merge from origin
+    required: true
+
+outputs:
+  result:
+    description: up-to-date, resolved or needs-human
+    value: ${{ steps.regen.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - id: regen
+      shell: bash
+      env:
+        BRANCH: ${{ inputs.branch }}
+        BASE: ${{ inputs.base }}
+      run: bash "$GITHUB_ACTION_PATH/action/run.sh"

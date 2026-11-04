@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+  action:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: regen
+      - name: Create a throwaway repo with a generated conflict
+        run: |
+          git init -q --bare "$RUNNER_TEMP/origin.git"
+          git init -qb selftest-base
+          git config user.name Test
+          git config user.email test@example.com
+          git remote add origin "$RUNNER_TEMP/origin.git"
+          echo regen >> .git/info/exclude
+          printf 'generated:\n  - files: [gen.txt]\n    run: cat inputs/* > gen.txt\n' > regen.yml
+          mkdir inputs
+          echo base > inputs/base
+          cp inputs/base gen.txt
+          git add .
+          git commit -qm base
+          git checkout -qb selftest-head
+          echo head > inputs/head
+          cat inputs/* > gen.txt
+          git add .
+          git commit -qm head
+          git checkout -q selftest-base
+          echo main > inputs/main
+          cat inputs/* > gen.txt
+          git add .
+          git commit -qm main
+          git push -q origin --all
+          git checkout -q selftest-head
+      - id: regen
+        uses: ./regen
+        with:
+          branch: selftest-head
+          base: selftest-base
+      - name: Check the merge was pushed
+        env:
+          RESULT: ${{ steps.regen.outputs.result }}
+        run: |
+          test "$RESULT" = resolved
+          test "$(git rev-parse HEAD)" = "$(git --git-dir="$RUNNER_TEMP/origin.git" rev-parse refs/heads/selftest-head)"
+          grep -qx head gen.txt
+          grep -qx main gen.txt
