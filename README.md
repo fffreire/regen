@@ -65,7 +65,7 @@ An agent can do this, but it may do it differently each time. `regen` follows th
 - [x] Config, file matching, and conflict classification
 - [x] `regen merge`
 - [x] `regen rebase`, including conflicts that repeat through a stack
-- [ ] GitHub Action
+- [x] [GitHub Action](docs/github-action.md)
 - [ ] Demo repo and tests
 
 ## License
